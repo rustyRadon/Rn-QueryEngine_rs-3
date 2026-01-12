@@ -1,0 +1,16 @@
+{
+  "name": "corporate_data",
+  "columns": [
+    { "name": "id", "data_type": "Int32", "file": "id.bin" },
+    { "name": "age", "data_type": "Int32", "file": "age.bin" },
+    { "name": "salary", "data_type": "Int32", "file": "salary.bin" },
+    { "name": "dept", "data_type": "Int32", "file": "dept.bin" }
+  ],
+  "departments": [
+    "Programming",
+    "Finance",
+    "Cybersecurity",
+    "Data Science",
+    "DevOps"
+  ]
+}

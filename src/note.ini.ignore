@@ -1,0 +1,21 @@
+.
+├── Cargo.toml
+├── metadata.json          <-- The "Source of Truth" for your table
+├── src
+│   ├── main.rs            <-- The Entry Point (Query Coordinator)
+│   ├── lib.rs             <-- Module Exports
+│   ├── catalog            <-- The "Brain": Handles Metadata & JSON
+│   │   ├── mod.rs
+│   │   └── schema.rs      <-- Defines Tables, Columns, and Types
+│   ├── storage            <-- The "Muscles": Handles Disk & Memory
+│   │   ├── mod.rs
+│   │   ├── column.rs      <-- The "Vectorized Dispatcher" 
+│   │   └── mmap_store.rs  <-- Zero-copy file access
+│   ├── compute            <-- The "Math": Specialized tight loops
+│   │   ├── mod.rs
+│   │   └── functions.rs   <-- SIMD-ready math operations
+│   └── util               <-- Tools
+│       ├── mod.rs
+│       └── bitmask.rs     <-- high-speed 125KB bitmask
+
+
