@@ -9,3 +9,6 @@ serde_json = "1.0"
 memmap2 = "0.9"
 bytemuck = { version = "1.14", features = ["derive"] }
 rayon = "1.8"
+
+[registries.crates-io]
+protocol = "sparse"

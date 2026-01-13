@@ -1,16 +1,47 @@
 {
   "name": "corporate_data",
   "columns": [
-    { "name": "id", "data_type": "Int32", "file": "id.bin" },
-    { "name": "age", "data_type": "Int32", "file": "age.bin" },
-    { "name": "salary", "data_type": "Int32", "file": "salary.bin" },
-    { "name": "dept", "data_type": "Int32", "file": "dept.bin" }
+    {
+      "name": "id",
+      "data_type": "Int32",
+      "file": "id.bin"
+    },
+    {
+      "name": "age",
+      "data_type": "Int32",
+      "file": "age.bin"
+    },
+    {
+      "name": "salary",
+      "data_type": "Float64",
+      "file": "salary.bin"
+    },
+    {
+      "name": "dept",
+      "data_type": "Int32",
+      "file": "dept.bin"
+    }
   ],
   "departments": [
-    "Programming",
-    "Finance",
-    "Cybersecurity",
-    "Data Science",
-    "DevOps"
+    {
+      "id": 1,
+      "name": "Programming"
+    },
+    {
+      "id": 2,
+      "name": "Finance"
+    },
+    {
+      "id": 3,
+      "name": "Cybersecurity"
+    },
+    {
+      "id": 4,
+      "name": "Data Science"
+    },
+    {
+      "id": 5,
+      "name": "DevOps"
+    }
   ]
 }

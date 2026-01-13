@@ -1,0 +1,137 @@
+.
+├── Cargo.toml
+├── metadata.json          <-- The "Source of Truth" for the table
+├── src
+│   ├── main.rs            <-- The Entry Point (Query Coordinator)
+│   ├── lib.rs             <-- Module Exports
+│   ├── catalog            <-- The "Brain": Handles Metadata & JSON
+│   │   ├── mod.rs
+│   │   └── schema.rs      <-- Defines Tables, Columns, and Types
+│   ├── storage            <-- The "Muscles": Handles Disk & Memory
+│   │   ├── mod.rs
+│   │   ├── column.rs      <-- The "Vectorized Dispatcher" 
+│   │   └── mmap_store.rs  <-- Zero-copy file access
+│   ├── compute            <-- The "Math": Specialized tight loops
+│   │   ├── mod.rs
+│   │   └── functions.rs   <-- SIMD-ready math operations
+│   └── util               <-- Tools
+│       ├── mod.rs
+│       └── bitmask.rs     <-- high-speed 125KB bitmask
+
+/////////////------------------- src/storage/column.rs ------------------/////////////
+
+use crate::catalog::schema::DataType;
+use crate::storage::mmap_store::MmapStore;
+use std::sync::Arc;
+
+/// The "Station Master" for typed data.
+/// Instead of owning a copy of the data (Vec), it holds an Atomic Reference 
+/// to the memory-mapped file (Zero-Copy).
+pub enum ColumnVault {
+    WholeNumbers(Arc<MmapStore>),    // Interpreted as i32 (4 bytes)
+    MoneyAndScores(Arc<MmapStore>),  // Interpreted as f64 (8 bytes)
+    TextLabels(Arc<MmapStore>),      // Future: Dictionary encoded strings
+}
+
+pub struct ColumnManager {
+    pub name: String,
+    pub vault: ColumnVault,
+}
+
+impl ColumnManager {
+    /// Connects a binary file to a specific data type from the schema.
+    /// This is the entry point for the storage engine.
+    pub fn load_from_disk(name: &str, dtype: &DataType, filename: &str) -> Result<Self, String> {
+        // Open the file using our high-speed MmapStore
+        let store = Arc::new(MmapStore::open_file(filename)?);
+
+        let vault = match dtype {
+            DataType::Int32 => ColumnVault::WholeNumbers(store),
+            DataType::Float64 => ColumnVault::MoneyAndScores(store),
+            DataType::String => ColumnVault::TextLabels(store),
+            _ => return Err(format!("Type {:?} not yet supported in ColumnVault", dtype)),
+        };
+
+        Ok(Self {
+            name: name.to_string(),
+            vault,
+        })
+    }
+
+    /// THE VECTORIZED DISPATCHER
+    /// This is the "Brain" of the execution. It allows the compute layer
+    /// to access the vault without the compute layer needing to know 
+    /// about file IO or raw bytes.
+    pub fn dispatch_to_math<F>(&self, mut logic: F) 
+    where 
+        F: FnMut(&ColumnVault) 
+    {
+        // One type-check happens here (outside the loop)
+        logic(&self.vault);
+    }
+}
+/////////////------------------- src/storage/column.rs end ------------------/////////////
+\
+
+
+
+
+use crate::storage::column::ColumnVault;
+use crate::util::bitmask::BitMask;
+use rayon::prelude::*;
+
+/// PARALLEL STATION: Integer Crunching
+pub fn crunch_integer_sum(vault: &ColumnVault, mask: &BitMask) -> i64 {
+    if let ColumnVault::WholeNumbers(numbers) = vault {
+        // We use par_chunks to give each CPU core a piece of the pie
+        numbers.par_iter().enumerate().map(|(i, &val)| {
+            if mask.get(i) {
+                val as i64
+            } else {
+                0
+            }
+        }).sum()
+    } else {
+        0
+    }
+}
+
+/// PARALLEL STATION: High-Precision Math (The Heavy Lifter)
+pub fn crunch_float_sum(vault: &ColumnVault, mask: &BitMask) -> f64 {
+    if let ColumnVault::MoneyAndScores(numbers) = vault {
+        // This splits the 1,000,000 rows across all your CPU cores
+        numbers.par_iter().enumerate().map(|(i, &val)| {
+            if mask.get(i) {
+                val
+            } else {
+                0.0
+            }
+        }).sum()
+    } else {
+        0.0
+    }
+}
+
+pub fn screen_for_matches<F>(vault: &ColumnVault, rule: F) -> BitMask 
+where 
+    F: Fn(i32) -> bool + Sync + Send 
+{
+    if let ColumnVault::WholeNumbers(numbers) = vault {
+        let size = numbers.len();
+        let mut mask = BitMask::new(size);
+        
+        // Parallel bitmasking: Every core flags its own rows
+        // Note: For simplicity, we are writing to the mask, 
+        // but in a 'God Tier' engine, we'd use Atomic bitsets.
+        numbers.iter().enumerate().for_each(|(i, &val)| {
+            if rule(val) {
+                // Since this bitmask is set once and never changed, 
+                // we can safely set it here for 1M rows.
+                // (In a production env, use a Mutex or Atomic bitset if cores overlap)
+            }
+        });
+        // Let's keep the filter serial for now to avoid complexity,
+        // but the math above is now 100% Parallel.
+    }
+    BitMask::new(1000000) // Placeholder
+}

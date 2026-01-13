@@ -1,1 +1,30 @@
 /target
+schema.rs 
+
+The Logic: This file allows us to be Dynamic. 
+If you change the JSON, this code automatically changes how the rest of the engine behaves without you recompiling.
+
+mmap_store.rs
+The Logic: Instead of "loading" a 1GB file into RAM (which is slow), mmap just points the CPU to the file on disk. 
+The data only moves when you actually touch it.
+
+column.rs
+The Logic: This solves your "Is it an Int?" switching problem.
+ We decide the type here, then hand the whole "Vault" to the next step.
+
+functions.rs
+The Logic: bytemuck makes the "cast" instant. par_iter makes the loop multi-threaded. 
+The if let happens outside the loop, so the CPU never gets interrupted.
+
+main.rs
+This is the Coordinator. It connects all the pieces.
+Ask Catalog for the schema.
+Ask Storage to open the files based on that schema.
+Ask Compute to "Screen" the Dept column (creates a BitMask).
+Ask Compute to "Crunch" the Salary column (uses the BitMask).
+Print the result.
+
+Command to Run
+Use this command to query for Department 1, employees older than 30, earning more than $50,000:
+
+cargo run --release -- 1 30 50000
