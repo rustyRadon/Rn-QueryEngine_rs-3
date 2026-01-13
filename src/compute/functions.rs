@@ -3,7 +3,7 @@ use crate::util::bitmask::BitMask;
 use rayon::prelude::*;
 use bytemuck;
 
-/// MATH STATION: Parallel Integer Sum
+/// Parallel Integer Sum
 pub fn crunch_integer_sum(vault: &ColumnVault, mask: &BitMask) -> i64 {
     if let ColumnVault::WholeNumbers(store) = vault {
         let numbers: &[i32] = bytemuck::cast_slice(store.as_bytes());
@@ -19,7 +19,7 @@ pub fn crunch_integer_sum(vault: &ColumnVault, mask: &BitMask) -> i64 {
     }
 }
 
-/// MATH STATION: Parallel Float Sum 
+///Parallel Float Sum 
 pub fn crunch_float_sum(vault: &ColumnVault, mask: &BitMask) -> f64 {
     if let ColumnVault::MoneyAndScores(store) = vault {
         let numbers: &[f64] = bytemuck::cast_slice(store.as_bytes());
@@ -35,7 +35,7 @@ pub fn crunch_float_sum(vault: &ColumnVault, mask: &BitMask) -> f64 {
     }
 }
 
-/// FILTER STATION: Row Screener
+/// Row Screener
 pub fn screen_for_matches<F>(vault: &ColumnVault, mut rule: F) -> BitMask 
 where 
     F: FnMut(i32) -> bool 
