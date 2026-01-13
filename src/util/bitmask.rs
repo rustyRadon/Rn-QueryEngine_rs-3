@@ -1,6 +1,6 @@
 pub struct BitMask {
     bits: Vec<u64>,
-    pub length: usize, 
+    pub length: usize,
 }
 
 impl BitMask {
@@ -16,6 +16,12 @@ impl BitMask {
         let holdable_index = index / 64;
         let position = index % 64;
         self.bits[holdable_index] |= 1 << position;
+    }
+
+    pub fn unset(&mut self, index: usize) {
+        let holdable_index = index / 64;
+        let position = index % 64;
+        self.bits[holdable_index] &= !(1 << position);
     }
 
     pub fn get(&self, index: usize) -> bool {
