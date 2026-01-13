@@ -1,8 +1,18 @@
 # Rn-QueryEngine_rs-3
 
-# RustyRadon-V3: Vectorized Columnar Query Engine
+## RustyRadon-V3: High-Performance Vectorized Query Engine
 
-A high-performance analytical query engine built in Rust, leveraging zero-copy memory mapping and vectorized parallel execution.
+**Tech Stack:** Rust, Rayon (Parallelism), Bytemuck (Zero-Copy), Memmap2 (I/O)
+
+RustyRadon-V3 is a systems-level analytical engine designed to demonstrate "Mechanical Sympathy"—aligning software logic with modern CPU architecture to achieve sub-millisecond latency across million-row datasets.
+
+### Key Engineering Achievements:
+
+* **Vectorized Dispatcher:** Implemented a pattern that identifies data types once per column, eliminating per-row branch mispredictions and allowing the CPU to maintain high-speed execution loops.
+* **Zero-Copy I/O:** Leveraged `mmap` to project binary files directly into memory addresses. Combined with `bytemuck` for raw byte casting, the engine achieves $O(1)$ memory overhead relative to data size.
+* **Parallel Morsel Processing:** Utilizes `Rayon` to shard datasets into morsels, processing them concurrently across all CPU cores while maximizing L1/L2 cache locality.
+* **Hardware-Accelerated Bitmask:** Built a custom `BitMask` utility using bitwise operations and the CPU's `POPCNT` instruction for near-instant row filtering and counting.
+* **Query Profiler:** Integrated a "Filter Selectivity" tracker to visualize data reduction at each stage of the query pipeline (Dept -> Age -> Salary).
 
 ##  The "Best of the Best" Architecture
 
@@ -34,3 +44,10 @@ Powered by `Rayon`, the engine automatically shards 1,000,000+ row morsels acros
 ## this command
 to query for Department 1, employees older than 30, earning more than $50,000:
 cargo run --release -- 1 30 50000
+
+## abt
+catalog/: Dynamic schema management.
+storage/: High-speed, zero-copy mmap handles.
+compute/: SIMD-ready parallel math stations.
+util/: A hardware-accelerated bitmask.
+main.rs: A coordinator with a built-in profiler.
